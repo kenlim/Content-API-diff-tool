@@ -60,7 +60,7 @@ object Main {
 
     comparison(XML.loadString(master), XML.loadString(liftRest)) match {
       case NoDiff => "Documents are similar."
-      case diff   => diff.toString
+      case diff   => path + "\n" + diff.toString
     }
   }
 
@@ -88,7 +88,7 @@ object Main {
     new File("result").mkdirs()
 
     // Load up the provided log file
-    val logFile = Source.fromFile("support/inputFile").getLines().take(10)
+    val logFile = Source.fromFile("support/inputFile").getLines().take(100)
 
     logFile.zipWithIndex.toList.par.foreach(processline)
     
