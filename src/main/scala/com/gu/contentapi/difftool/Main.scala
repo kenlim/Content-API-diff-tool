@@ -2,15 +2,21 @@ package com.gu.contentapi.difftool
 
 import io.Source
 
-import OwenDiff.{ Diff => OwensDiff }
 import dispatch._
+import OwenDiff.{Diff => OwensDiff}
 import net.liftweb.json._
 import java.io.{FileWriter, File, StringWriter}
 import net.liftweb.json.JsonAST.JValue
+import xml.XML
+import com.google.xmldiff.{NoDiff, Comparison, Diff => XmlDiff}
 
 object Main {
-  val masterContentApiHost = url("http://localhost:8080/api")
-  val liftRestContentApiHost = url("http://localhost:8700/content-api/api")
+//  val masterContentApiHost = url("http://localhost:8080/api")
+//  val liftRestContentApiHost = url("http://localhost:8700/content-api/api")
+
+  val masterContentApiHost = url("http://content.guardianapis.com")
+  val liftRestContentApiHost = url("http://content.guardianapis.com/search  ")
+
 
   val h = new Http with thread.Safety
 
@@ -36,11 +42,13 @@ object Main {
     case other => pretty(render(other))
   }
 
-  def doJsonDiff(master: String, liftRest: String) = {
+  def doJsonDiff(path: String, master: String, liftRest: String) = {
     val (masterJson, liftJson) = (parse(master), parse(liftRest))
     val Diff(changed, added, deleted) = masterJson diff liftJson
 
-    """|LINES MODIFIED:
+    """|%s
+        |
+       |LINES MODIFIED:
        |%s
 
        |LINES ADDED:
@@ -48,7 +56,23 @@ object Main {
 
        |LINES DELETED:
        |%s
-    |""".stripMargin.format(r(changed), r(added), r(deleted))
+    |""".stripMargin.format(path, r(changed), r(added), r(deleted))
+  }
+
+  def doXmlDiff(path: String, master: String, liftRest: String) = {
+    val comparison = new Comparison
+
+    comparison(XML.loadString(master), XML.loadString(liftRest)) match {
+      case NoDiff => "Documents are similar."
+      case diff   => diff.toString
+    }
+  }
+
+  def diffResult(pathAndParams: String, master: String, liftRest: String) = {
+       master.charAt(0) match {
+         case '<' => doXmlDiff(pathAndParams, master, liftRest)
+         case _ => doJsonDiff(pathAndParams, master, liftRest)
+       }
   }
 
   def processline( idxAndLine: (String, Int) ) {
@@ -61,21 +85,14 @@ object Main {
     // 2. Lift-rest Content Api
     val liftRestResponse = getResponse(liftRestContentApiHost / pathAndParams)
 
-
-    val diffResult =
-      """|Differences in results when calling
-         |%s
-         
-      |""".stripMargin.format(pathAndParams) + doJsonDiff(masterResponse, liftRestResponse)
-
-    writeToFile(new File("result/%d.diff" format idx), diffResult.mkString)
+    writeToFile(new File("result/%d.diff" format idx), diffResult(pathAndParams, masterResponse, liftRestResponse))
   }
 
   def main(args: Array[String]) {
     new File("result").mkdirs()
 
     // Load up the provided log file
-    val logFile = Source.fromFile("support/inputJson").getLines().take(10)
+    val logFile = Source.fromFile("support/inputFile").getLines().take(10)
 
     logFile.zipWithIndex.toList.par.foreach(processline)
     
