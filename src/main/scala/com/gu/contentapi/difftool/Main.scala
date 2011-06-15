@@ -11,12 +11,8 @@ import xml.XML
 import com.google.xmldiff.{NoDiff, Comparison, Diff => XmlDiff}
 
 object Main {
-//  val masterContentApiHost = url("http://localhost:8080/api")
-//  val liftRestContentApiHost = url("http://localhost:8700/content-api/api")
-
-  val masterContentApiHost = url("http://content.guardianapis.com")
-  val liftRestContentApiHost = url("http://content.guardianapis.com/search  ")
-
+  val masterContentApiHost = url("http://localhost:8080/api")
+  val liftRestContentApiHost = url("http://localhost:8700/content-api/api")
 
   val h = new Http with thread.Safety
 
