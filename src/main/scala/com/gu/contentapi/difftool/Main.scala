@@ -60,28 +60,33 @@ object Main {
 
     comparison(XML.loadString(master), XML.loadString(liftRest)) match {
       case NoDiff => "Documents are similar."
-      case diff   => path + "\n" + diff.toString
+      case diff => path + "\n" + diff.toString
     }
   }
 
   def diffResult(pathAndParams: String, master: String, liftRest: String) = {
-       master.charAt(0) match {
-         case '<' => doXmlDiff(pathAndParams, master, liftRest)
-         case _ => doJsonDiff(pathAndParams, master, liftRest)
-       }
+    master.charAt(0) match {
+      case '<' => doXmlDiff(pathAndParams, master, liftRest)
+      case _ => doJsonDiff(pathAndParams, master, liftRest)
+    }
   }
 
-  def processline( idxAndLine: (String, Int) ) {
+  def processline(idxAndLine: (String, Int)) {
     val (line, idx) = idxAndLine
     val pathAndParams = line.replaceAllLiterally("/content-api/api", "")
 
-    // Translate the URLs into calls to make to the:
-    // 1. Master Content Api
-    val masterResponse = getResponse(masterContentApiHost / pathAndParams)
-    // 2. Lift-rest Content Api
-    val liftRestResponse = getResponse(liftRestContentApiHost / pathAndParams)
+    try {
+      // Translate the URLs into calls to make to the:
+      // 1. Master Content Api
+      val masterResponse = getResponse(masterContentApiHost / pathAndParams)
 
-    writeToFile(new File("result/%d.diff" format idx), diffResult(pathAndParams, masterResponse, liftRestResponse))
+      // 2. Lift-rest Content Api
+      val liftRestResponse = getResponse(liftRestContentApiHost / pathAndParams)
+
+      writeToFile(new File("result/%d.diff" format idx), diffResult(pathAndParams, masterResponse, liftRestResponse))
+    } catch {
+       case sc: StatusCode => println("Master returned %s for %s".format(sc.code, pathAndParams))
+    }
   }
 
   def main(args: Array[String]) {
@@ -91,7 +96,7 @@ object Main {
     val logFile = Source.fromFile("support/inputFile").getLines().take(100)
 
     logFile.zipWithIndex.toList.par.foreach(processline)
-    
+
     h.shutdown()
   }
 }

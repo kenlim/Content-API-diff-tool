@@ -107,15 +107,29 @@ class Comparison extends ((Elem, Elem) => XmlDiff) {
       .append("\n\tChanged: ").append(reportChangedMapValues(expMap, actualMap))
       .append("\n\tAdded: ").append(reportAddedMapEntries(expMap, actualMap))
       .append("\n\tRemoved: ").append(reportRemovedMapEntries(expMap, actualMap))
+//      .append("\n\tExpected: ").append(exp)
+//      .append("\n\tFound: ").append(actual)
     Diff(path, sb.toString)
   }
 
-  def reportChangedMapValues(original : Map[String, String], hotnSpicy: Map[String, String]) = {
-    // where the keys are the same by the values are not.
-    original.filterKeys(hotnSpicy.keys.toList.contains(_)).collect {
-      case (key, value) if value != hotnSpicy(key)  =>
-        key -> (original(key) -> hotnSpicy(key))
-     }
+  def reportChangedMapValues(original : Map[String, String], hotnSpicy: Map[String, String]): String = {
+    // find all the common keys
+    // if the common key values are different, print them out.
+
+    val mapOfChangedAtrs = original.collect{
+      case (key, value) if hotnSpicy.contains(key) && value != hotnSpicy(key) =>
+        key -> (value, hotnSpicy(key))
+    }
+
+    val result = new StringBuilder(64)
+    result.append("\n")
+    mapOfChangedAtrs.foreach { case (key, (originalVal, newVal )) =>
+      result.append("""|- %s: %s
+          |+ %s: %s
+          |""".stripMargin.format(key, originalVal, key, newVal))
+    }
+
+    result.toString
   }
 
   def reportAddedMapEntries(original: Map[String, String], hotnSpicy:Map[String, String] ) = {
@@ -147,7 +161,7 @@ class Comparison extends ((Elem, Elem) => XmlDiff) {
       val attr =
         if (a.isPrefixed) 
           e2.attributes(a.getNamespace(e1), e2.scope, a.key)
-        else 
+        else
           e2.attributes(a.key)
       (attr != null) && (notext || attr == a.value)
     }
