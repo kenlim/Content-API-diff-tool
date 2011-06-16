@@ -112,7 +112,10 @@ class Comparison extends ((Elem, Elem) => XmlDiff) {
 
   def reportChangedMapValues(original : Map[String, String], hotnSpicy: Map[String, String]) = {
     // where the keys are the same by the values are not.
-    original.filterKeys(hotnSpicy.keys.toList.contains(_)).filterKeys( key => original.get(key) != hotnSpicy.get(key))
+    original.filterKeys(hotnSpicy.keys.toList.contains(_)).collect {
+      case (key, value) if value != hotnSpicy(key)  =>
+        key -> (original(key) -> hotnSpicy(key))
+     }
   }
 
   def reportAddedMapEntries(original: Map[String, String], hotnSpicy:Map[String, String] ) = {
@@ -179,7 +182,7 @@ class Comparison extends ((Elem, Elem) => XmlDiff) {
             if (includesAttributes(e1, e2))
               compareElems(e1.child.toList, e2.child.toList)
             else
-              wrongAttributes("Attributes are different at ", e1, e1.attributes, e2.attributes)
+              wrongAttributes("\nAttributes are different at ", e1, e1.attributes, e2.attributes)
           } else {
             val sb = new StringBuilder(128)
             sb.append("Expected ")
