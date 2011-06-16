@@ -114,7 +114,7 @@ class Comparison extends ((Elem, Elem) => XmlDiff) {
     // where the keys are the same by the values are not.
     original.filterKeys(hotnSpicy.keys.toList.contains(_)).collect {
       case (key, value) if value != hotnSpicy(key)  =>
-        key -> (original(key) -> hotnspicy(key))
+        key -> (original(key) -> hotnSpicy(key))
      }
   }
 
