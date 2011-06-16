@@ -99,12 +99,31 @@ class Comparison extends ((Elem, Elem) => XmlDiff) {
   }
   
   private def wrongAttributes(pref: String, e: Elem, exp: MetaData, actual: MetaData): XmlDiff = {
+    val (expMap, actualMap) = (exp.asAttrMap, actual.asAttrMap)
+
     val sb = new StringBuilder(64)
     sb.append(pref)
     e.nameToString(sb)
-      .append("\n\tExpected: ").append(exp)
-      .append("\n\tFound: ").append(actual)
+      .append("\n\tChanged: ").append(reportChangedMapValues(expMap, actualMap))
+      .append("\n\tAdded: ").append(reportAddedMapEntries(expMap, actualMap))
+      .append("\n\tRemoved: ").append(reportRemovedMapEntries(expMap, actualMap))
     Diff(path, sb.toString)
+  }
+
+  def reportChangedMapValues(original : Map[String, String], hotnSpicy: Map[String, String]) = {
+    // where the keys are the same by the values are not.
+    original.filterKeys(hotnSpicy.keys.toList.contains(_)).filterKeys( key => original.get(key) != hotnSpicy.get(key))
+  }
+
+  def reportAddedMapEntries(original: Map[String, String], hotnSpicy:Map[String, String] ) = {
+    // where new entries exist
+    hotnSpicy.filterKeys( ! original.keys.toList.contains(_))
+  }
+
+  def reportRemovedMapEntries(original: Map[String, String], hotnSpicy:Map[String, String] ) = {
+    // where entries no longer exist
+
+    original.filterKeys( ! hotnSpicy.keys.toList.contains(_))
   }
 
   /** Returns true if 'label' is an ignored element. */
