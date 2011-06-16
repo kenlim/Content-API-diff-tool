@@ -60,7 +60,7 @@ object Main {
 
     comparison(XML.loadString(master), XML.loadString(liftRest)) match {
       case NoDiff => "Documents are similar."
-      case diff   => diff.toString
+      case diff   => path + "\n" + diff.toString
     }
   }
 
