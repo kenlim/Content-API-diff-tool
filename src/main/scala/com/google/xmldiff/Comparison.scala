@@ -104,7 +104,7 @@ class Comparison extends ((Elem, Elem) => XmlDiff) {
     val sb = new StringBuilder(64)
     sb.append(pref)
     e.nameToString(sb)
-      .append("\n\tChanged: ").append(reportChangedMapValues(expMap, actualMap))
+      .append("\n\tChanged: ").append(reportChangedMapValues(expMap, actualMap).mkString("\n"))
       .append("\n\tAdded: ").append(reportAddedMapEntries(expMap, actualMap))
       .append("\n\tRemoved: ").append(reportRemovedMapEntries(expMap, actualMap))
     Diff(path, sb.toString)
