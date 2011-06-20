@@ -7,8 +7,9 @@ import OwenDiff.{Diff => OwensDiff}
 import net.liftweb.json._
 import java.io.{FileWriter, File, StringWriter}
 import net.liftweb.json.JsonAST.JValue
-import xml.XML
 import com.google.xmldiff.{NoDiff, Comparison, Diff => XmlDiff}
+import xml.{Elem, Node, XML}
+import xml.transform.{RuleTransformer, RewriteRule}
 
 object Main {
   val masterContentApiHost = url("http://localhost:8080/api")
@@ -55,13 +56,34 @@ object Main {
     |""".stripMargin.format(path, r(changed), r(added), r(deleted))
   }
 
-  def doXmlDiff(path: String, master: String, liftRest: String) = {
-    val comparison = new Comparison
+  def cannonicalizeXml(xml: String) = {
+    import sys.process._
 
-    comparison(XML.loadString(master), XML.loadString(liftRest)) match {
-      case NoDiff => "Documents are similar."
-      case diff => path + "\n" + diff.toString
+    val tmpFile = File.createTempFile("abc", "xml")
+
+
+    object FieldSorter extends RewriteRule {
+      override def transform(n: Node) = n match {
+        case Elem(prefix, "fields", attribs, scope, children@_*) =>
+          val sortedChildren = children.sortBy(_.attribute("name").map(_.text).getOrElse(""))
+          Elem(prefix, "fields", attribs, scope, sortedChildren: _*)
+        case other => other
+      }
     }
+
+    val transfomer = new RuleTransformer(FieldSorter)
+
+    writeToFile(tmpFile, transfomer(XML.loadString(xml)).toString())
+
+    val cmd = ("xmllint --c14n " + tmpFile.getCanonicalPath) #| "xmllint --format -"
+    cmd.!!
+  }
+
+  def doXmlDiff(path: String, master: String, liftRest: String) = {
+    val c14nMaster = cannonicalizeXml(master)
+    val c14nLift = cannonicalizeXml(liftRest)
+
+    OwensDiff.diff(c14nMaster.split("\n"), c14nLift.split("\n")).mkString
   }
 
   def diffResult(pathAndParams: String, master: String, liftRest: String) = {
@@ -79,13 +101,23 @@ object Main {
       // Translate the URLs into calls to make to the:
       // 1. Master Content Api
       val masterResponse = getResponse(masterContentApiHost / pathAndParams)
+<<<<<<< HEAD
 
+      // 2. Lift-rest Content Api
+      val liftRestResponse = getResponse(liftRestContentApiHost / pathAndParams)
+
+      //writeToFile(new File("result/%d.diff" format idx), diffResult(pathAndParams, masterResponse, liftRestResponse))
+      println(diffResult(pathAndParams, masterResponse, liftRestResponse))
+    } catch {
+      case sc: StatusCode => println("Master returned %s for %s".format(sc.code, pathAndParams))
+=======
       // 2. Lift-rest Content Api
       val liftRestResponse = getResponse(liftRestContentApiHost / pathAndParams)
 
       writeToFile(new File("result/%d.diff" format idx), diffResult(pathAndParams, masterResponse, liftRestResponse))
     } catch {
-       case sc: StatusCode => println("Master returned %s for %s".format(sc.code, pathAndParams))
+      case r: RuntimeException => println("problems getting %s".format(pathAndParams))
+>>>>>>> c8baf0ffee28db2efdff7d2dbd14ab7c77859702
     }
   }
 

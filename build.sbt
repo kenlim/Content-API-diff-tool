@@ -9,3 +9,8 @@ libraryDependencies ++= Seq(
     )
 
 scalaVersion := "2.9.0-1"
+
+
+libraryDependencies += "com.codecommit" %% "anti-xml" % "0.3-SNAPSHOT"
+
+resolvers += ScalaToolsSnapshots
