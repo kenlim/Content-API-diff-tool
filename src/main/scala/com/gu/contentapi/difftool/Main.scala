@@ -88,7 +88,7 @@ object Main {
     val c14nMaster = cannonicalizeXml(master)
     val c14nLift = cannonicalizeXml(liftRest)
 
-    OwensDiff.diff(c14nMaster.split("\n"), c14nLift.split("\n")).mkString
+    "%s\n\n".format(path) + OwensDiff.diff(c14nMaster.split("\n"), c14nLift.split("\n")).mkString
   }
 
   def diffResult(pathAndParams: String, master: String, liftRest: String) = {
