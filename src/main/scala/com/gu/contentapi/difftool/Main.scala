@@ -101,7 +101,7 @@ object Main {
       // Translate the URLs into calls to make to the:
       // 1. Master Content Api
       val masterResponse = getResponse(masterContentApiHost / pathAndParams)
-<<<<<<< HEAD
+
 
       // 2. Lift-rest Content Api
       val liftRestResponse = getResponse(liftRestContentApiHost / pathAndParams)
@@ -110,14 +110,7 @@ object Main {
       println(diffResult(pathAndParams, masterResponse, liftRestResponse))
     } catch {
       case sc: StatusCode => println("Master returned %s for %s".format(sc.code, pathAndParams))
-=======
-      // 2. Lift-rest Content Api
-      val liftRestResponse = getResponse(liftRestContentApiHost / pathAndParams)
 
-      writeToFile(new File("result/%d.diff" format idx), diffResult(pathAndParams, masterResponse, liftRestResponse))
-    } catch {
-      case r: RuntimeException => println("problems getting %s".format(pathAndParams))
->>>>>>> c8baf0ffee28db2efdff7d2dbd14ab7c77859702
     }
   }
 
