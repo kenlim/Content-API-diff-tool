@@ -100,7 +100,8 @@ object Main {
 
   def processline(idxAndLine: (String, Int)) {
     val (line, idx) = idxAndLine
-    val pathAndParams = line.replaceAllLiterally("/content-api/api", "")
+
+    val pathAndParams = line.replaceAllLiterally("/content-api/api/", "").split("/").filterNot( _ == "").mkString("/")
 
     try {
       // Translate the URLs into calls to make to the:
@@ -123,7 +124,9 @@ object Main {
     new File("result").mkdirs()
 
     // Load up the provided log file
-    val logFile = Source.fromFile("support/inputFile").getLines().take(100)
+    val logFile = Source.fromFile("support/inputFile").
+      getLines().
+      take(100)
 
     logFile.zipWithIndex.toList.par.foreach(processline)
 
