@@ -10,6 +10,7 @@ import net.liftweb.json.JsonAST.JValue
 import com.google.xmldiff.{NoDiff, Comparison, Diff => XmlDiff}
 import xml.{Elem, Node, XML}
 import xml.transform.{RuleTransformer, RewriteRule}
+import javax.xml.transform.Transformer
 
 object Main {
   val masterContentApiHost = url("http://localhost:8080/api")
@@ -58,10 +59,18 @@ object Main {
 
   def cannonicalizeXml(xml: String) = {
     import sys.process._
+    
+    xml.replaceAll( """<?xml version='1.0' encoding='utf-8'?>""", "")
 
     val tmpFile = File.createTempFile("abc", "xml")
 
+    writeToFile(tmpFile, alphabetizeFields(xml).toString())
 
+    val cmd = ("xmllint --c14n " + tmpFile.getCanonicalPath) #| "xmllint --format -"
+    cmd.!!
+  }
+
+  def alphabetizeFields(xml: String) = {
     object FieldSorter extends RewriteRule {
       override def transform(n: Node) = n match {
         case Elem(prefix, "fields", attribs, scope, children@_*) =>
@@ -72,11 +81,7 @@ object Main {
     }
 
     val transfomer = new RuleTransformer(FieldSorter)
-
-    writeToFile(tmpFile, transfomer(XML.loadString(xml)).toString())
-
-    val cmd = ("xmllint --c14n " + tmpFile.getCanonicalPath) #| "xmllint --format -"
-    cmd.!!
+    transfomer(XML.loadString(xml))
   }
 
   def doXmlDiff(path: String, master: String, liftRest: String) = {
@@ -106,8 +111,8 @@ object Main {
       // 2. Lift-rest Content Api
       val liftRestResponse = getResponse(liftRestContentApiHost / pathAndParams)
 
-      //writeToFile(new File("result/%d.diff" format idx), diffResult(pathAndParams, masterResponse, liftRestResponse))
-      println(diffResult(pathAndParams, masterResponse, liftRestResponse))
+      writeToFile(new File("result/%d.diff" format idx), diffResult(pathAndParams, masterResponse, liftRestResponse))
+      //println(diffResult(pathAndParams, masterResponse, liftRestResponse))
     } catch {
       case sc: StatusCode => println("Master returned %s for %s".format(sc.code, pathAndParams))
 
